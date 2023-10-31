@@ -54,7 +54,7 @@ for item in dataloader:
             sum_tensors[token.item()] += emb.detach()
             crr_tensors[token.item()] += 1
 
-    if tokens_so_far >= 10:
+    if tokens_so_far >= 1000000:
         break
 
 print("Finished!")
