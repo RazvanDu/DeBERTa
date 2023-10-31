@@ -58,6 +58,7 @@ for item in dataloader:
         break
 
 print("Finished!")
+print("Least represented token seen in the data has " + str(min(crr_tensors.values())) + " occurrences!")
 
 for token in sum_tensors.keys():
     sum_tensors[token] = sum_tensors[token].clone()/crr_tensors[token]
