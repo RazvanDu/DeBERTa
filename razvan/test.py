@@ -32,7 +32,7 @@ for item in dataloader:
     tokenized = tokenizer(text, return_tensors='pt')
     tokens = tokenized['input_ids'][0]
 
-    if len(tokens) <= context:
+    if len(tokens) <= context + 1:
         continue
 
     i = np.random.randint(0, len(tokens) - context - 1)
