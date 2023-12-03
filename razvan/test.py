@@ -67,7 +67,7 @@ for item in dataloader:
             sum_tensors[token.item()] += emb.detach()
             crr_tensors[token.item()] += 1
 
-    if tokens_so_far >= 513:
+    if tokens_so_far >= 100000000: # 10 million
         break
 
 print("Finished!")
@@ -86,7 +86,6 @@ for unseen in tokenizer.get_vocab():
     crr += 1
     if crr%1000 == 0:
         print(crr)
-        break
     #print("TEMP ", tokenizer.vocab[unseen], " ", unseen)
     if tokenizer.vocab[unseen] not in sum_tensors.keys():
         unseen_tokens.append(unseen)
@@ -94,7 +93,7 @@ for unseen in tokenizer.get_vocab():
 print("Number of tokens unseen: ", (len(tokenizer.get_vocab())-len(sum_tensors)), '/', len(tokenizer.get_vocab()))
 
 print("Unseen tokens list: ", unseen_tokens)
-print("Number of unseen metric 2: ", len(unseen_tokens))
+print("Number of unseen tokens metric 2: ", len(unseen_tokens))
 
 for token in sum_tensors.keys():
     sum_tensors[token] = sum_tensors[token].clone()/crr_tensors[token]
