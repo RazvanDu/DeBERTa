@@ -2,12 +2,15 @@ from transformers import DebertaConfig, DebertaModel, AutoTokenizer
 import torch
 import numpy as np
 
-device = "cpu"
+device = "cuda"
+torch.set_default_device(device)
 
 context = 512
 
 model = DebertaModel.from_pretrained("microsoft/deberta-base").to(device)
 tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-base")
+
+print(len(tokenizer.get_vocab()))
 
 from datasets import load_dataset
 
@@ -30,6 +33,16 @@ for item in dataloader:
     text = item['text']
 
     tokenized = tokenizer(text, return_tensors='pt')
+
+    #print(tokenizer.vocab['the'])
+    #print(text)
+    #for i in range(50):
+    #    token_id = tokenized['input_ids'][0][i].item()
+    #    token_str = tokenizer.deco[token_id]
+    #    vocab_id = tokenizer.vocab[token_str]
+    #    print(token_id, ' ', token_str, ' ', vocab_id)
+    #break
+
     tokens = tokenized['input_ids'][0]
 
     if len(tokens) <= context + 1:
@@ -54,18 +67,41 @@ for item in dataloader:
             sum_tensors[token.item()] += emb.detach()
             crr_tensors[token.item()] += 1
 
-    if tokens_so_far >= 1000000:
+    if tokens_so_far >= 513:
         break
 
 print("Finished!")
-print("Least represented token seen in the data has " + str(min(crr_tensors.values())) + " occurrences!")
+
+number_seen_once = 0
+for value in crr_tensors.values():
+    if value == 1:
+        number_seen_once += 1
+
+print(str(number_seen_once) + " tokens have only been seen once!")
+
+unseen_tokens = []
+crr = 0
+
+for unseen in tokenizer.get_vocab():
+    crr += 1
+    if crr%1000 == 0:
+        print(crr)
+        break
+    #print("TEMP ", tokenizer.vocab[unseen], " ", unseen)
+    if tokenizer.vocab[unseen] not in sum_tensors.keys():
+        unseen_tokens.append(unseen)
+
+print("Number of tokens unseen: ", (len(tokenizer.get_vocab())-len(sum_tensors)), '/', len(tokenizer.get_vocab()))
+
+print("Unseen tokens list: ", unseen_tokens)
+print("Number of unseen metric 2: ", len(unseen_tokens))
 
 for token in sum_tensors.keys():
     sum_tensors[token] = sum_tensors[token].clone()/crr_tensors[token]
 
-file_embd = open('deberta_embd.tsv', 'w')
+file_embd = open('deberta_embd.tsv', 'w', encoding="utf-8")
 
-file_embd.write(str(len(sum_tensors)) + " " + str(len(sum_tensors[next(iter(sum_tensors))].detach().numpy())) + "\n")
-
+file_embd.write(str(len(sum_tensors)) + " " + str(len(sum_tensors[next(iter(sum_tensors))].cpu().detach().numpy())) + "\n")
 for token in sum_tensors.keys():
-    file_embd.write(str(token) + " " + (" ".join([str(x) for x in sum_tensors[token].detach().numpy()])) + "\n")
+    file_embd.write(str(tokenizer.convert_ids_to_tokens([token])[0]) + " " + (" ".join([str(x) for x in sum_tensors[token].cpu().detach().numpy()])) + "\n")
+    #print("TEST ", , " ", tokenizer.decode(token))
